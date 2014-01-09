@@ -1,0 +1,65 @@
+#!/bin/bash -e
+
+if [ ! -d /sys/class/gpio/gpio44 ]; then echo 44 > /sys/class/gpio/export; fi
+if [ ! -d /sys/class/gpio/gpio45 ]; then echo 45 > /sys/class/gpio/export; fi
+if [ ! -d /sys/class/gpio/gpio46 ]; then echo 46 > /sys/class/gpio/export; fi
+
+echo out > /sys/class/gpio/gpio44/direction
+echo in  > /sys/class/gpio/gpio45/direction
+echo in  > /sys/class/gpio/gpio46/direction
+
+OPEN=`cat /sys/class/gpio/gpio45/value`
+CLOSED=`cat /sys/class/gpio/gpio46/value`
+
+STATE="super"
+
+if [ $OPEN == 1 ]; then
+  if [ $CLOSED == 1 ]; then
+    echo "set-garage-door: panic: showing both open and closed"
+    exit 1
+  fi
+  STATE="open"
+fi
+
+if [ $CLOSED == 1 ]; then
+  STATE="closed"
+fi
+
+if [ $STATE == "super" ]; then
+  echo "set-garage-door: door moving or stuck"
+  exit 1
+fi
+
+case $1 in
+  open)
+    case $STATE in
+      open)
+        echo "set-garage-door: already open"
+        exit 1
+        ;;
+      closed)
+        echo 1 > /sys/class/gpio/gpio44/value
+        sleep 1
+        echo 0 > /sys/class/gpio/gpio44/value
+        ;;
+    esac
+    ;;
+  close)
+    case $STATE in
+      closed)
+        echo "set-garage-door: already closed"
+        exit 1
+        ;;
+      open)
+        echo 1 > /sys/class/gpio/gpio44/value
+        sleep 1
+        echo 0 > /sys/class/gpio/gpio44/value
+        ;;
+    esac
+    ;;
+  *)
+    echo "usage: set-garage-door [open|close]"
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,28 @@
+#!/bin/bash -e
+
+if [ ! -d /sys/class/gpio/gpio44 ]; then echo 44 > /sys/class/gpio/export; fi
+if [ ! -d /sys/class/gpio/gpio45 ]; then echo 45 > /sys/class/gpio/export; fi
+if [ ! -d /sys/class/gpio/gpio46 ]; then echo 46 > /sys/class/gpio/export; fi
+
+echo out > /sys/class/gpio/gpio44/direction
+echo in  > /sys/class/gpio/gpio45/direction
+echo in  > /sys/class/gpio/gpio46/direction
+
+OPEN=`cat /sys/class/gpio/gpio45/value`
+CLOSED=`cat /sys/class/gpio/gpio46/value`
+
+STATE="super"
+
+if [ $OPEN == 1 ]; then
+  if [ $CLOSED == 1 ]; then
+    echo "panic: both open and closed"
+    exit 1
+  fi
+  STATE="open"
+fi
+
+if [ $CLOSED == 1 ]; then
+  STATE="closed"
+fi
+
+echo $STATE
