@@ -1,10 +1,7 @@
-garage
-======
+Garage door automation
+======================
 
-Garage door automation.
-
-This is the scripts (for a Beaglebone Black) and simple circuit diagram used to
-read and set my garage door state.
+This is the scripts (for a Beaglebone Black and also a Spark Core) and simple circuit diagram used to read and set my garage door state.
 
 ![Circuit Diagram](circuit.png "Circuit Diagram")
 
