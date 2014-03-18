@@ -2,6 +2,10 @@ int _doorTopSwitch = D0;
 int _doorBotSwitch = D1;
 int _toggleButton  = D2;
 
+// version
+
+const int VERSION = 2;
+
 // door and switch states
 
 const int UNKNOWN = -1;
@@ -17,6 +21,8 @@ int BotSwitch = UNKNOWN;
 int _led = D7;
 int ledFlip = LOW;
 
+int _actions = 0;
+
 void setup() {
     pinMode(_led, OUTPUT);                  // flip it when something happens just to show things are happening
     pinMode(_toggleButton, OUTPUT);
@@ -25,13 +31,15 @@ void setup() {
     
     // Maybe use interrupts for something sometime later...?
     // attachInterrupt(_doorTopSwitch, doorTopSwitch, CHANGE);
+    // Spark.publish()...
     
-    Spark.variable("TopSwitch", &TopSwitch, INT);       // make available just for debugging, should never need to be exported
-    Spark.variable("BotSwitch", &BotSwitch, INT);       // make available just for debugging, should never need to be exported
-    Spark.function("toggle", sendToggle);               // make available just for debugging, should never need to be exported
-    Spark.function("doorstate", getDoorState);
-    Spark.function("dooropen", doorOpen);
-    Spark.function("doorclose", doorClose);
+    // Spark.variable("TopSwitch", &TopSwitch, INT);       // uncomment for debugging access
+    // Spark.variable("BotSwitch", &BotSwitch, INT);       // uncomment for debugging access
+    
+    // accessible functions
+    
+    Spark.function("state", getState);
+    Spark.function("action", doAction);
 }
 
 void loop() {
@@ -44,6 +52,7 @@ void loop() {
 void _flipYoShizzle() {
     ledFlip = !ledFlip;
     digitalWrite(_led, ledFlip);
+    _actions++;
 }
 
 int _getDoorState() {
@@ -62,31 +71,7 @@ int _sendToggle() {
     digitalWrite(_toggleButton, LOW);
 }
 
-// ----------------------------------------- EXPORTED FUNCTIONS
-
-int sendToggle(String args) {
-    _flipYoShizzle();
-    
-    int doorState = _getDoorState();
-    
-    if (doorState == OPEN || doorState == CLOSED) {
-        // Door is in good state, it's okay to activate the remote
-        _sendToggle();
-        return OKAY;
-    } else {
-        // it's not okay to activate the remote
-        return FAILURE;
-    }
-}
-
-int getDoorState(String args) {
-    _flipYoShizzle();
-    return _getDoorState();
-}
-
-int doorOpen(String args) {
-    _flipYoShizzle();
-    
+int _setDoorOpen() {
     int state = _getDoorState();
     
     if (state == CLOSED) {
@@ -101,9 +86,7 @@ int doorOpen(String args) {
     }
 }
 
-int doorClose(String args) {
-    _flipYoShizzle();
-    
+int _setDoorClose() {
     int state = _getDoorState();
     
     if (state == OPEN) {
@@ -115,5 +98,42 @@ int doorClose(String args) {
         } else {
             return MOVING;
         }
+    }
+}
+
+
+// ----------------------------------------- EXPORTED FUNCTIONS
+
+int getState(String args) {
+    _flipYoShizzle();
+    
+    args.trim();
+    args.toUpperCase();
+    
+    if (args.equals("DOOR")) {
+        return _getDoorState();
+    } else if (args.equals("UPTIME")) {
+        return millis();
+    } else if (args.equals("VERSION")) {
+        return VERSION;
+    } else if (args.equals("ACTIONS")) {
+        return _actions;
+    } else {
+        return FAILURE;
+    }
+}
+
+int doAction(String args) {
+    _flipYoShizzle();
+    
+    args.trim();
+    args.toUpperCase();
+    
+    if (args.equals("OPEN")) {
+        return _setDoorOpen();
+    } else if (args.equals("CLOSE")) {
+        return _setDoorClose();
+    } else {
+        return FAILURE;
     }
 }
